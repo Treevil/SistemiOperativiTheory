@@ -1,0 +1,45 @@
+.bold {
+  font-weight: bold;
+}
+
+ .fixed {
+  position: fixed;
+  top: 0;
+  z-index: 10000;
+  margin-top: 12px;
+ }
+
+a.nav-active {
+    color: rgba(100, 150, 150, 0.9);
+    text-shadow: 2px 2px 2px rgba(100, 150, 150, 0.9);
+     // outline-bottom: 1px solid #;
+}
+
+.wrapper {
+  margin: 0 auto;
+  
+  .block-info {
+    background: #fff;
+    margin: 20px auto;
+    display: block;
+    padding: 15px;
+    border-radius: 2px 2px 2px 2px; 
+    -webkit-box-shadow: 0 1px 4px 
+    rgba(0, 0, 0, 0.3), 0 0 40px 
+    rgba(0, 0, 0, 0.1) inset;
+    -moz-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1) inset;
+    box-shadow: 0 1px 4px 
+    rgba(0, 0, 0, 0.3), 0 0 40px 
+    rgba(0, 0, 0, 0.1) inset;
+  }
+}
+.clear {
+  clear: both;
+}
+.callout {
+  background:linear-gradient(to bottom, #8dd2d9 , #58c0c7);
+}
+
+.cons {
+  color: red;
+}

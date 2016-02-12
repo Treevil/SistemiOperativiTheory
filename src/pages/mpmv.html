@@ -1,0 +1,258 @@
+<div class="row">
+    <div class="large-12 columns">
+        <h1>Gestione Memoria</h1>
+    </div>
+</div>
+<div class="row">
+<div id="nav-anchor"></div>
+    <div class="nav-2 large-3 medium-3 columns">
+        <ul class="vertical menu">
+            <li><a href="#intro">Intro</a></li>
+            <li><a href="#pagedemand">Demanding Page</a></li>
+            <li><a href="#swap">Swap Area</a></li>
+            <li><a href="#algoritmi">Algoritmi di Rimpiazzamento</a></li>
+            <li><a href="#allocazione">Allocazione Frame</a></li>
+            <li><a href="#thrashing">Thrashing</a></li>
+            </li>
+        </ul>
+    </div>
+    <div class="large-9 medium-9 columns wrapper">
+        <section id="intro" class="block-info">
+            <h2>Intro</h2>
+            <p>
+                I metodi di gestione della MP tentano di tenere in RAM più processi possibile per aumentare la multiporgrammazione. Tuttavia, per una certa quantità di RAM disponibile in un sistema, il numero di processi che possono stare in MP dipende dallo loro dimensione. La memoria Virtuale (MV) è un insieme di tecniche per permettere l’esecuzione di processi in cui codice e/o dati non sono caricati completamente in memoria Primaria.
+            </p>
+            <p>
+                La MV funziona perché i programmi non hanno bisogno di essere caricati interamente in MP per essere eseguiti.
+                <br>
+                <br> L’idea di fondo della Memoria Virtuale è quindi la seguente: Carichiamo in MP un pezzo di programma solo se questo deve effettivamente essere eseguito, e solo quando deve essere eseguito. Analogamente, carichiamo in MP solo la posizione di strutture dati che vengono usate in un dato momento dell’esecuzione del programma.
+            </p>
+            <h4>Vantaggi</h4>
+            <p>
+                L’ovvia conseguenze di questo modo di procedere è che si possono eseguire programmi più grandi della MP. Più formalmente: possiamo eseguire processi che sfruttano uno spazio di indirizzamento logico maggiore di quello fisico. Possiamo avere contemporaneamente in esecuzione programmi che, assieme, occupano già spazio della MP disponibile. Come conseguenza dal punto precedente, aumenta il grado di multiprogrammazione e quindi il throughput della CPU. Il programmi partono più velocemente perché non dobbiamo caricarli completamente in memoria primaria.
+            </p>
+            <h4>Contro</h4>
+            <p>
+                <ul>
+                    <li>Si verifica un aumento del traffico dalla RAM all’Hard Disk (e viceversa)</li>
+                    <li>L’esecuzione del singolo programma può richiedere più tempo che se la MV non fosse implementata.</li>
+                    <li>In alcune situazioni particolari, le prestazioni complessive del sistema possono degradare drasticamente (vedi <a href="#thrashing">Thrashing</a>)</li>
+                </ul>
+            </p>
+        </section>
+        <section id="pagedemand" class="block-info">
+            <h2>Demand Paging</h2>
+            <p>dea di base: Portare una pagina in MP solo al momento del primo riferimento ad una lacerazione appartenente alla pagina stessa. Quando la CPU esegue un’istruzione macchina che fa riferimento ad una locazione di RAM in un’altra pagina(rispetto a quella che contiene l’istruzione) e la pagina non è in MP il SO deve sospendere il processo, portare la pagina in memoria e, quando possibile, far ripartire il processo dal punto in cui era stato sospeso. Il tutto in maniera completamente trasparente al processo.</p>
+            <p>Quando la pagina riferita manca:
+                <br>
+                <br> Il processo viene tolto dalla CPU e messo in uno stato di “waiting for page”, il modulo del SO detto pager inizia il caricamento della pagina mancane della MS a un frame libero della MP. Ovviamente, in attesa di completare il caricamento la CPU viene assegnata ad un altro processo. Quando la pagina è in MP, il processo corrispondente è rimesso in Coda di Ready: riprenderà l’istruzione che aveva causato il problema, quando sarà scelto dallo scheduler.
+            </p>
+            <p>
+                Ma come si fa a sapere se una pagina (valida) non è però caricata in RAM? Si può usare il <span class="bold">bit di validità</span> della pagina associato ad ogni elemento della PT * se si tenta di fare riferimento ad una pagina non in MP (il suo bit di validità è a 0) viene generata una trap detta <span class="bold">page fault</span> che fa intervenire il SO e partire il meccanismo descritto prima
+                <br> * quando la pagina mancante è arrivata in MP, il suo bit di validità è messo a 1 e la PT aggiornata: il processo può ripartire dall’istruzione causa del page fault.
+                <br>
+                <br>
+                <br>
+                <span class="bold">Pure demand Paging</span>: Un processo può essere fatto partire senza nessuna delle sue pagine in MP. Alla prima istruzione indirizzata dal PC, si genera un page fault.
+            </p>
+            <h4>Supporto Hardware</h4>
+            <p>
+                Per implementare la memoria virtuale è necessario un certo supporto hardware. In particolare:
+                <ul>
+                    <li>la tabella delle pagine deve avere il bit di validità testabile dall’hardware per generare il page fault </li>
+                    <li>Le istruzioni devono essere ri-eseguibili dopo un page fault, oppure l’hardware della CPU deve controllare che tutti gli operandi di una istruzione siano presenti in MP prima di poter eseguire l’istruzione </li>
+                    <li> quindi: mentre la paginazione può essere aggiunta a qualsiasi sistema, la paginazione su richiesta, e più in generale la memoria virtuale, richiedono HW specifico</li>
+                </ul>
+            </p>
+            <h4>Prestazioni</h4>
+            <p class="callout">
+                eat (effective access time) = (1-p) × ma + p × tempo di gestione del page fault
+                <br>
+                <br> Con:
+                <br>ma = tempo di accesso in MP se il dato è presente (ad esempio, ma ≈100÷200 nanosec)
+                <br> p = probabilità di un page fault
+            </p>
+            Se supponiamo ma = 200 nanosec, abbiamo (valori espressi in nanosecondi): eat = (1-p) × 200 + p × 8.000.000 = 200 + p × 7.999.800. Con p = 0.001 (un page fault ogni 1000 accessi), si ha: eat = 8.199,8 (circa 8,2 microsecondi). L’esecuzione rallenta di più di 40 volte!!!
+            <br>
+            <br>
+            <br> E se vogliamo un degrado massimo del 10%? • Allora p deve essere tale che eat = 220 > 200 + 8 × 10<sup>6</sup>× p
+            <br>20 > 8 × 10<sup>6</sup> × p
+            <br> p
+            < 2,5 × 10<sup>-6</sup>
+                <br>Ossia, non più di 1 page fault ogni 400.000 accessi in memoria.
+        </section>
+        <section id="swap" class="block-info">
+            <h2>Swap Area</h2>
+            <p> La memoria virtuale, è in genere gestita usando una opportuna porzione dell’HD detta Area di Swap.  All’installazione, sull’HD quest’area viene riservata come porzione del disco ad uso esclusivo del SO. La swap area è gestita con meccanismi più semplici ed efficienti di quelli usati per il File System
+                <br>
+                <br>
+                <span class="bold">Uso</span>
+                <ol>
+                    <li>Il modo più semplice in cui viene usata la swap area è il seguente: all’avvio di un processo, il suo eseguibile viene copiato interamente nell’area di swap
+                        <ul>
+                            <li>il tempo di start up aumenta </li>
+                            <li>Abbiamo bisogni di aree di swap grandi</li>
+                            <li>migliora il tempo di gestione dei page fault, perché ci vuole meno tempo per recuperare le pagine in MS, una volta che sono nell’area di swap, perché non si deve più passare attraverso il file system </li>
+                        </ul>
+                    </li>
+                    <li>dobbiamo prelevare le pagine dell’eseguibile, o di un eventuale file di dati direttamente dal file system
+                        <ul>
+                            <li>può essere necessario se dobbiamo limitare l'area di swap</li>
+                            <li>l’avvio dei processi è più veloce
+                            </li>
+                            <li>ma la loro esecuzione può risultare più lenta</li>
+                        </ul>
+                    </li>
+                </ol>
+                Se ci fosse sempre un frame libero, una pagina sarebbe caricata in memoria una sola volta nell'esecuzione del programma. Ma l’idea della memoria virtuale è proprio di:
+                <ul>
+                    <li>poter eseguire programmi più grandi della MP </li>
+                    <li>poter avere contemporaneamente in esecuzione programmi che, assieme, occupano più spazio della MP disponibile </li>
+                </ul>
+                Abbiamo visto che il riferimento ad una determinata locazione di MP, può provocare un page fault. E se non c’è un frame libero in cui caricare la pagina mancante?
+                <ul>
+                    <li>Il SO sceglie una pagina “vittima” in MP da rimuovere</li>
+                    <li>Salva la pagina vittima nella swap area (se necessario)</li>
+                    <li>Carica nel frame liberato la pagina mancante</li>
+                </ul>
+                Ma adesso, il tempo di gestione del page fault raddoppia:
+                <br> – (1) salva la pagina vittima, (2) carica la nuova pagina
+                <br>  tuttavia, se la pagina vittima non è stata modificata, ne abbiamo già una copia in MS, e possiamo evitare di salvarla.
+                <br> Un <span class="bold">dirty bit</span> associato ad ogni entry della PT ci dice se la pagina relativa è stata modificata: viene settato a 1 la prima volta che una pagina in RAM viene acceduta in scrittura. Così dobbiamo salvare in MS solo le pagine vittima che hanno il dirty bit settato. Notate che solo pagine contenenti dati possono essere modificate, e quindi avere il dirty bit a 1. Se una pagina di dati con il dirty bit a 1 viene scelta come pagina vittima, va quindi salvata nell’area di swap per non perdere le modifiche effettuate sui dati che contiene. Le pagine di codice sono accedute solo in lettura, e non vanno quindi salvate nell’area di swap se scelte come pagine vittima. Inoltre, se il codice era stato inizialmente copiato nell’area di swap, riportare in RAM le pagine di codice rimosse risulta molto più veloce che prelevarle dall’eseguibile di cui fanno parte memorizzato nel file system.
+                <br>
+                <br>
+                <br> Nascono però due problemi:
+                <ul>
+                    <li> Allocazione dei frame: quanti ne diamo a ciascun processo?</li>
+                    <li> Rimpiazzamento delle pagine: quale pagina scegliamo come vittima? </li>
+                </ul>
+            </p>
+        </section>
+        <section id="algoritmi" class="block-info">
+            <h2>Algoritmi di Rimpiazzamento</h2>
+            <p>
+                Il numero di page fault per una data sequenza e un dato algoritmo di rimpiazzamento dipende ovviamente dal numero di frame disponibili. Intuitivamente, maggiore è il numero di frame disponibili e minore è il numero di page fault (ma non sempre così, vedi anomalia di Belady)
+                <br>
+                <h3>Fifo </h3> Come pagina vittima sceglie quella arrivata da più tempo in MP (non c’è bisogno di associare a ogni pagina il tempo di arrivo, ci basta una coda FIFO) • E’ in idea semplice, ma non necessariamente buona, infatti: se la pagina contiene del codice di inizializzazione del processo, usato solo all’inizio allora va bene, non servirà più e possiamo rimuoverla dalla MP. Ma se la pagina contiene una variabile inizializzata all'inizio e usata per tutta l’esecuzione del codice, non conviene rimuoverla dalla MP Soffre dell’anomali di Belady: Aumentando il numero di frame, il numero di page fault può aumentare.
+                <br>
+                <h3>Algoritmo di OPT:</h3>
+                <ul>
+                    <li>Non soffre dell’anomalia di Belady</li>
+                    <li>Produce il numero minimo di page fault per un certo numero di frame disponibili.</li>
+                </ul>
+                <p class="callout">In un algoritmo OPT(o MIN): La pagina vittima è quella che sarà usata più in là nel tempo. Usato solo come termine di paragone per misurare le prestazioni di altri algoritmi.</p>
+                <h3>LRU (Least Recently Used)</h3> Cerca di approssimare OPT sostituendo la pagina che non è stata usata da più tempo.
+                <ul>
+                    <li>Rispetto a OPT, guarda all'indietro nel tempo anziché che in avanti: almeno il passato lo conosciamo! </li>
+                    <li>LRU è un buon algoritmo di rimpiazzamento, perché si avvicina più a OPT che a FIFO,ma è difficile da implementare in modo efficiente</li>
+                    <li>LRU non soffre dell’anomalia di Belady
+                    </li>
+                </ul>
+                In generale, gli algoritmi che non soffrono della anomalia di Belady sono detti <span class="bold">“algoritmi a stack”.
+</span> Per un algoritmo a stack è possibile dimostrare che:
+                <p class="callout">l’insieme delle pagine tenute in MP dall’algoritmo per n frame disponibili è sempre un sottoinsieme dell’insieme delle pagine tenute in MP se sono disponibili n+1 frame </p>
+                <h4>Mediante uno stack</h4> Tenere uno stack dei numeri di pagina acceduti;
+                <ul>
+                    <li>dimensione dello stack = numero di frame assegnati al processo </li>
+                    <li>ad ogni accesso il numero di pagina viene spostato in cima allo stack.</li>
+                    <li>La pagina in fondo allo stack è la LRU, la vittima! </li>
+                </ul>
+                La gestione dello stack è costosissima se fatta via SW (lo stack va aggiornato ad ogni riferimento alla MP)
+                <h4>Mediante un contatore</h4> ad ogni pagina è associato un campo;
+                <ul>
+                    <li>un contatore viene incrementato ad ogni riferimento di una qualsiasi pagina, e il valore del contatore è scritto nel campo di quella pagina </li>
+                    <li>La pagina con il campo contatore di valore più piccolo è la vittima!</li>
+                    <li>Notate che in alternativa potremmo usare il clock della CPU per registrare il momento in cui una pagina è stata usata.</li>
+                </ul>
+                Le due implementazioni viste avrebbero bisogno di un grosso supporto HW per funzionare, sia il contatore che lo stack devono essere aggiornati ad ogni riferimento in memoria: se facciamo tutte le operazioni via software l’overhead che ne risulta è inaccettabile!
+                <br>
+                <br>
+                <br> Il supporto HW per LRU è costosissimo; di fatto non è disponibile nei processori comunemente usati. Molti processori forniscono comunque un semplice supporto HW che permette di approssimare LRU. <span class="bold">Reference bit</span>: un bit associato ad ogni pagina nella Page Table di un processo.
+                <br>
+                <br>
+                <br> Quando un processo parte, i reference bit delle sue pagine sono tutti inizializzati a 0 dal sistema.  Quando viene indirizzata una pagina (in lettura o in scrittura) l’architettura mette a 1 il reference bit di quella pagina. Quindi, in ogni istante, possiamo sapere quali pagine di un processo sono state usate e quali no. Non possiamo sapere in quale ordine è stato fatto riferimento alle pagine usate, ma sappiamo che sono state riferite più di recente delle pagine con il reference bit a 0.
+                <h3>Algoritmo della seconda Change</h3> Si parte da un algoritmo FIFO In caso di page fault, si considera la pagina in fondo alla coda (ossia entrata in RAM da più tempo): se il suo reference bit è a 0, allora quella diventa la pagina vittima. Se il reference bit della pagina è a 1, allora lo si azzera, e la pagina viene messa in testa alla coda come se fosse appena entrata in RAM: viene data alla pagina una seconda chance. Si passa ad esaminare la successiva pagina della coda FIFO
+                <h3>Seconda Change Migliorata</h3> Se HW fornisce sia il reference che il dirty bit, le pagine possono essere raggruppate in 4 classi
+                <table class="stack">
+                    <thead>
+                        <tr>
+                            <th>Bits</th>
+                            <th>Value</th>
+                            <th>Qualità rimpiazzamento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>(0,0)</td>
+                            <td>né usata di recente né modificata</td>
+                            <td>ottima da rimpiazzare</td>
+                        </tr>
+                        <tr>
+                            <td>(1,0)</td>
+                            <td>usata di recente ma non modificata</td>
+                            <td>meno buona da rimpiazzare </td>
+                        </tr>
+                        <tr>
+                            <td>(0,1)</td>
+                            <td>non usata di recente, ma modificata</td>
+                            <td>ancora meno buona, dobbiamo salvarla in MS.</td>
+                        </tr>
+                        <tr>
+                            <td>(1,1)</td>
+                            <td>usata di recente e modificata</td>
+                            <td>la peggiore candidata al rimpiazzamento</td>
+                        </tr>
+                    </tbody>
+                </table>
+                La tecnica usata è poi la stessa della seconda chance, ma si sceglie come pagina vittima la prima pagina che si trova nella classe migliore non vuota. Questo algoritmo è usato in molti sistemi Unix e in MacOs.
+            </p>
+        </section>
+        <section id="allocazione" class="block-info">
+            <h2>Allocazione dei Frame</h2>
+            <p>Come distribuiamo i frame disponibili fai processi?</p>
+            <p>
+                <span class="bold">Allocazione uniforme</span>: lo stesso numero di frame a tutti i processi: n frame, p processi, n/p frame a ciascun processo
+            </p>
+            <p>
+                <span class="bold">allocazione proporzionale</span>: tiene conto del fatto che i processi hanno dimensioni diverse.Se le dimensioni in pagine di tre processi sono: P1 = 4, P2 = 6, P3 = 12 e ci sono 11 frame disponibili, l’allocazione sarà: P1 = 2, P2 = 3, P3 = 6. </p>
+            <p>
+                Allocazione proporzionale in <span class="bold">base alla priorità</span>: tiene conto del fatto che i processi hanno priorità diverse. Il numero di frame assegnati a ciascun processo dipende dalla priorità relativa dei processi (ed eventualmente anche dalle loro dimensioni). Quale che sia lo schema adottato, è chiaro che il numero di frame allocati per processo cambia anche col variare del grado di multiprogrammazione.
+            </p>
+            <h4>Locale Vs Globale</h4>
+            <p>In quale gruppo di pagine possiamo/dobbiamo scegliere la vittima da rimuovere dalla MP? </p>
+            <p>
+                <span class="bold">Allocazione globale</span>: scegliamo la vittima fra tutte le pagine in memoria principale (di solito, escluse quelle del SO) – notate: probabilmente verrà portata via una pagina ad un processo diverso da quello che ha generato il page fault Problemi: il turnaround di un processo è fortemente influenzato dal comportamento degli altri processi con cui convive, e potrebbe variare tantissimo da un’esecuzione all’altra
+            </p>
+            <p><span class="bold">Allocazione locale</span>: scegliamo la vittima fra le pagine del processo che ha generato page fault, il numero di frame per processo rimane costante.</p>
+            <p class="cons">
+                <span class="bold">Problemi</span>: se si danno troppe (relativamente) pagine ad un processo, si può peggiorare il throughput del sistema perché gli altri processi genereranno più page fault.
+            </p>
+            Si è visto sperimentalmente che l’allocazione globale fornisce in genere un throughput maggiore e riesce a gestire la multiprogrammazione in maniera più flessibile.  L’allocazione globale è di solito preferita per sistemi time sharing, in cui molti utenti possono usare contemporaneamente il sistema
+            </p>
+        </section>
+        <section id="thrashing" class="block-info">
+            <h2>Thrashing</h2>
+            <p>Consideriamo un sistema in cui, in un certo momento, ogni processo ha a disposizione pochi frame, ossia ogni processo ha in RAM un piccolo numero di pagine rispetto al numero totale di pagine di cui è composto. Supponiamo anche di adottare una allocazione globale dei frame.</p>
+            <p>
+                Avendo poche pagine in RAM, ogni processo ha un’alta probabilità di generare un page fault.  Quando un processo genera page fault, una pagina vittima viene tolta dalla MP, probabilmente ad un altro processo.
+            </p>
+            <p class="callout">
+                Thrashing: meccanismo per cui tutti i processi finiscono per generare continuamente page fault, rubandosi continuamente pagine l'un l'altro.
+            </p>
+            <p>
+                Intuitivamente, il thrashing si verifica quando si tenta di aumentare troppo il grado di multiprogrammazione, in modo da sfruttare al massimo il tempo di CPU e incrementare il throughput del sistema. Oltre una certa soglia però, i processi passano più tempo a fare page fault che a portare avanti il loro lavoro, e il livello di utilizzazione della CPU, e quindi il throughput, crollano verticalmente!
+                <p class="callout">Img 70</p>
+            </p>
+            <p>Se il livello di utilizzo della CPU di un sistema è troppo basso, si può essere tentati di alzarlo aumentando in grado di multiprogrammazione (ad esempio permettendo a più utenti di connettersi, o di lanciare un maggior numero di processi) In questo modo però, i nuovi processi incominciano a sottrarre pagine ai processi già presenti, per “farsi un pò di spazio”... Fino ad un certo punto l’aumento di processi è ben tollerato dal sistema, poiché ciascun processo ha comunque una quantità sufficiente di frame a disposizione da poter girare senza generare troppi page fault. Ma se “si esagera”, ci si può avvicinare alla soglia del thrashing: molti processi incominciano a generare dei page fault: come conseguenza vengono tolti dalla RQ e messi in una coda di wait in attesa della pagina mancante. La RQ si svuota, e il livello di utilizzo della CPU scende. Beh, ma se la CPU è sotto-utilizzata, si può lanciare qualche altro processo, o permettere a qualche altro utente di collegarsi... E la situazione non fa che peggiorare!
+            </p>
+            <p>
+                In definitiva quindi, il thrashing è una sorta di “ingolfamento” del sistema: Vogliamo sfruttarlo al meglio “iniettando” più e più processi nel sistema, col risultato che i processi si ostacolano a vicenda.
+            </p>
+            <h3>Combattere il Thrashing</h3>
+            <p>La soluzione giusta sarebbe di diminuire il grado di multiprogrammazione temporaneamente, in modo che i processi non rimossi dalla MP abbiamo il tempo di terminare correttamente prima di far (ri)partire gli altri.
+                <br> Usare una politica di rimpiazzamento locale può essere una soluzione, così i processi non si possono rubare le pagine l’un l’altro. Se anche un singolo processo va in thrashing, non danneggia gli altri (in realtà un pochino si, perché farà uso pesante dell’I/O su disco), se però diamo troppo pochi frame a ogni processo per aumentare il grado di multiprogrammazione, può accadere che tutti vadano in thrashing lo stesso.</p>
+            <p>
+                Stabiliamo (ad esempio in base ad osservazioni sperimentali) quando la frequenza di page-fault e’ “accettabile” rispetto alle prestazioni che vogliamo ottenere dal sistema. Se la frequenza osservata è troppo bassa, possiamo togliere ai processi qualche frame, e aumentare il grado di multiprogrammazione  Se la frequenza osservata è troppo alta, diminuiamo il grado di multiprogrammazione e ridistribuiamo i frame liberati fra i processi non rimossi.</p>
+        </section>
+    </div>
+</div>
